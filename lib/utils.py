@@ -37,7 +37,7 @@ def create_slurm_script(task, config, dconfig, narray, script):
     if narray > 1:
         f.write(f"python {scr}{task}.py {config} {dconfig} $SLURM_ARRAY_TASK_ID\n")
     else:
-        f.write(f"python {scr}{task}.py  {config} {dconfig}\n")
+        f.write(f"python {scr}{task}.py  {config} {dconfig} 0\n")
     f.close()
     return 
     
@@ -423,7 +423,6 @@ def create_mosaic_footprint(footprint, fpath):
         fpath (_type_): _description_
     """
     # from a survey footprint create a mosaic of footprints at lower resol.
-
     if os.path.exists(fpath):
         return
 
@@ -1127,8 +1126,8 @@ def sky_partition(tiling, gdir, footprint, workdir):
                     print ('......Tile ',i, ' / ', ntiles)
             else:
                 print ('......Tile ',i, ' / ', ntiles)    
-            hp_lab = partition[i]
-            all_hp_neigh = np.array([]).astype('int')
+            hp_lab = np.array(partition[i]).astype(int)
+            all_hp_neigh = np.array([]).astype(int)
             for j in range(0, N_layers):
                 hp_tile = np.hstack((hp_lab, all_hp_neigh))
                 all_hp = np.unique(
@@ -1175,8 +1174,8 @@ def sky_partition(tiling, gdir, footprint, workdir):
     radius_deg = np.zeros(len(partition))
 
     for i in range(0, ntiles):
-        hp_core = partition[i]
-        hp_tile = tiles[i]
+        hp_core = np.array(partition[i]).astype(int)
+        hp_tile = np.array(tiles[i]).astype(int)
         npix_core[i] = len(hp_core)
         npix_tile[i] = len(hp_tile)
         racen[i], deccen[i] = tile_center(
@@ -1428,7 +1427,7 @@ def create_ptile_specs(target, radius,
         radius_filter_deg = search_radius/60.
     if radius_unit == 'mpc':
         radius_filter_deg = np.degrees(
-            (search_radius/60.) / target['conv_factor']
+            (search_radius / target['conv_factor'])
         )
 
     ptile_specs = {'id': 0,
@@ -1657,7 +1656,6 @@ def concatenate_cl_tiles(out_paths, all_tiles, code):
     print ('Concatenate clusters')
     workdir = out_paths['workdir']
 
-    # tiles with clusters 
     eff_tiles = tiles_with_clusters(out_paths, all_tiles, code)
     
     list_clusters = []
