@@ -59,7 +59,7 @@ def slurm_submit(task, config, dconfig, narray=1, dep=None):
 
 
 def make_tile_cat(tile_specs, sourcecat, footprint, maglim, wcfg):
-
+    
     data_gal_tile = read_hpix_mosaicFitsCat(
         tile_specs['hpix_tile'], 
         sourcecat['mosaic']['dir']
@@ -192,13 +192,11 @@ def read_mosaicFitsCat_in_disc (galcat, tile, radius_deg):
     # find list of fits intersection cluster field
     Nside_fits, nest_fits = galcat['mosaic']['Nside'],\
                             galcat['mosaic']['nest']
-
     fits_pixels_in_disc = hp.query_disc(
         nside=Nside_fits, nest=nest_fits, 
         vec=hp.ang2vec(racen, deccen, lonlat=True),
         radius = np.radians(radius_deg), inclusive=True
     )
-
     relevant_fits_pixels = fits_pixels_in_disc\
                            [np.isin(
                                fits_pixels_in_disc, 
@@ -425,7 +423,8 @@ def create_mosaic_footprint(footprint, fpath):
     # from a survey footprint create a mosaic of footprints at lower resol.
     if os.path.exists(fpath):
         return
-
+    
+    create_directory(fpath)
     print ('Create footprint mosaic')
     create_directory(fpath)
     hpix0, frac0 = read_FitsFootprint(
@@ -479,14 +478,12 @@ def concatenate_fits(flist, output):
     Returns:
         _type_: _description_
     """
-
     for i in range (0, len(flist)):
         dat = read_FitsCat(flist[i])
         if i == 0:
             cdat = np.copy(dat)
         else:
             cdat = np.append(cdat, dat)
-
     t = Table(cdat)
     t.write(output, overwrite=True)
     return cdat
@@ -528,14 +525,12 @@ def add_key_to_fits(fitsfile, key_val, key_name, key_type):
     """
     dat = read_FitsCat(fitsfile)
     orig_cols = dat.columns
-
     if key_type == 'float':
         new_col = fits.ColDefs([
             fits.Column(name=key_name, format='E',array=key_val)])
     if key_type == 'int':
         new_col = fits.ColDefs([
             fits.Column(name=key_name, format='J',array=key_val)])
-
 
     hdu = fits.BinTableHDU.from_columns(orig_cols + new_col)    
     hdu.writeto(fitsfile, overwrite = True)
@@ -720,7 +715,6 @@ def radec_window_area (ramin, ramax, decmin, decmax):
 
 
 # healpix functions
-
 def sub_hpix(hpix, Nside, nest):
     """_summary_
 
@@ -840,7 +834,6 @@ def survey_ra_minmax(ra):
     Returns:
         _type_: _description_
     """
-
     ramin, ramax = np.amin(ra), np.amax(ra)
     if ramin<0.5 and ramax>359.5:
         nbins = 360
@@ -1016,7 +1009,7 @@ def sky_partition(tiling, gdir, footprint, workdir):
         print ('Sky partition for characterization')
     else:
         print ('Sky partition for detection')
-        
+
     if os.path.isfile(
             os.path.join(
                 workdir, tiling['rpath'],
@@ -1027,7 +1020,7 @@ def sky_partition(tiling, gdir, footprint, workdir):
                 tiling['tiles_filename'])))
         print ('.....Nr. of Tiles = ', ntiles)
         return ntiles
-
+        
     overlap_deg = tiling['overlap_deg']
     Nside = tiling['Nside']
     nest = tiling['nest']
@@ -1039,7 +1032,6 @@ def sky_partition(tiling, gdir, footprint, workdir):
         [os.path.splitext(x)[0] for x in raw_list]
     ).astype(int)
     ra0_crossing, ra_split = scan_survey_ra(hpix_fits, Nside, nest)
-
     if tiling['ntiles'] > 0:
         ntiles = tiling['ntiles']
     else:
@@ -1050,6 +1042,7 @@ def sky_partition(tiling, gdir, footprint, workdir):
         ntiles = int(npix*area_pix/tile_area)
     print ('.....Nr. of Tiles = ', ntiles)
 
+    
     # partition
     if not os.path.isfile(
             os.path.join(
@@ -1082,7 +1075,7 @@ def sky_partition(tiling, gdir, footprint, workdir):
                 tiling['sky_partition_npy']
             ), np.array(partition, dtype=object)
         )
-
+        
         # ra-dec plot of the partition
         plt.clf()
         plt.figure(figsize=(8, 8))
@@ -1521,7 +1514,6 @@ def cond_in_hpx_disc(hpxg, Nside, nest, racen, deccen, rad_deg):
         radius = np.radians(rad_deg), 
         inclusive=False
     )
-
     cond_strict = np.isin(hpxg, pixels_in_disc_strict)
     return cond_strict
 
@@ -1652,12 +1644,12 @@ def tiles_with_clusters(out_paths, all_tiles, code):
 
 
 def concatenate_cl_tiles(out_paths, all_tiles, code):
-    
+
     print ('Concatenate clusters')
     workdir = out_paths['workdir']
 
     eff_tiles = tiles_with_clusters(out_paths, all_tiles, code)
-    
+
     list_clusters = []
     for it in range(0, len(eff_tiles)):
         tile_dir = os.path.join(
